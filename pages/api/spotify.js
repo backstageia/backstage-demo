@@ -1,88 +1,120 @@
 // pages/api/spotify.js
-// Searches Spotify for artists using Client Credentials flow (no user login needed)
 
-var tokenCache = { token: null, expires: 0 };
+var tokenData = { token: null, expires: 0 };
 
-async function getToken() {
-  if (tokenCache.token && Date.now() < tokenCache.expires) {
-    return tokenCache.token;
+async function spotifyFetch(url, options) {
+  var res = await fetch(url, options);
+  if (!res.ok) {
+    var errText = await res.text();
+    throw new Error("Spotify HTTP " + res.status + ": " + errText);
   }
-  var clientId = process.env.SPOTIFY_CLIENT_ID;
-  var clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  var basic = Buffer.from(clientId + ":" + clientSecret).toString("base64");
+  return res.json();
+}
 
-  var res = await fetch("https://accounts.spotify.com/api/token", {
+async function getToken(clientId, clientSecret) {
+  if (tokenData.token && Date.now() < tokenData.expires) {
+    return tokenData.token;
+  }
+
+  var authString = Buffer.from(clientId + ":" + clientSecret).toString("base64");
+
+  var data = await spotifyFetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
-      "Authorization": "Basic " + basic,
+      "Authorization": "Basic " + authString,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: "grant_type=client_credentials",
   });
-  var data = await res.json();
-  tokenCache.token = data.access_token;
-  tokenCache.expires = Date.now() + (data.expires_in - 60) * 1000;
+
+  if (!data.access_token) {
+    throw new Error("No access_token in response: " + JSON.stringify(data));
+  }
+
+  tokenData.token = data.access_token;
+  tokenData.expires = Date.now() + 3500000;
   return data.access_token;
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  var query = req.query.q;
-  var artistId = req.query.id;
+  var clientId = process.env.SPOTIFY_CLIENT_ID;
+  var clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return res.status(500).json({ error: "Missing SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET in environment variables" });
+  }
+
+  var query = req.query.q || "";
+  var artistId = req.query.id || "";
 
   try {
-    var token = await getToken();
+    var token = await getToken(clientId, clientSecret);
+    var headers = { "Authorization": "Bearer " + token };
 
-    // If artist ID provided, get full artist details + top tracks
+    // Get full artist details
     if (artistId) {
-      var artistRes = await fetch("https://api.spotify.com/v1/artists/" + artistId, {
-        headers: { "Authorization": "Bearer " + token },
-      });
-      var artist = await artistRes.json();
+      var artist = await spotifyFetch("https://api.spotify.com/v1/artists/" + artistId, { headers: headers });
 
-      var topRes = await fetch("https://api.spotify.com/v1/artists/" + artistId + "/top-tracks?market=AR", {
-        headers: { "Authorization": "Bearer " + token },
-      });
-      var topData = await topRes.json();
+      var topData = await spotifyFetch("https://api.spotify.com/v1/artists/" + artistId + "/top-tracks?market=AR", { headers: headers });
 
-      var relatedRes = await fetch("https://api.spotify.com/v1/artists/" + artistId + "/related-artists", {
-        headers: { "Authorization": "Bearer " + token },
-      });
-      var relatedData = await relatedRes.json();
+      var relData = await spotifyFetch("https://api.spotify.com/v1/artists/" + artistId + "/related-artists", { headers: headers });
+
+      var topTracks = [];
+      if (topData.tracks) {
+        for (var i = 0; i < Math.min(topData.tracks.length, 5); i++) {
+          topTracks.push(topData.tracks[i]);
+        }
+      }
+
+      var relArtists = [];
+      if (relData.artists) {
+        for (var j = 0; j < Math.min(relData.artists.length, 5); j++) {
+          relArtists.push(relData.artists[j]);
+        }
+      }
 
       return res.status(200).json({
         artist: artist,
-        topTracks: topData.tracks ? topData.tracks.slice(0, 5) : [],
-        relatedArtists: relatedData.artists ? relatedData.artists.slice(0, 5) : [],
+        topTracks: topTracks,
+        relatedArtists: relArtists,
       });
     }
 
-    // Otherwise search by name
-    if (!query) return res.status(400).json({ error: "Missing query" });
+    // Search artists
+    if (!query) {
+      return res.status(400).json({ error: "Missing query parameter 'q'" });
+    }
 
-    var searchRes = await fetch(
+    var searchData = await spotifyFetch(
       "https://api.spotify.com/v1/search?q=" + encodeURIComponent(query) + "&type=artist&limit=6&market=AR",
-      { headers: { "Authorization": "Bearer " + token } }
+      { headers: headers }
     );
-    var searchData = await searchRes.json();
-    var artists = searchData.artists && searchData.artists.items ? searchData.artists.items : [];
 
-    return res.status(200).json({
-      artists: artists.map(function(a) {
-        return {
+    var artists = [];
+    if (searchData.artists && searchData.artists.items) {
+      for (var k = 0; k < searchData.artists.items.length; k++) {
+        var a = searchData.artists.items[k];
+        var img = null;
+        if (a.images && a.images.length > 0) img = a.images[0].url;
+        artists.push({
           id: a.id,
           name: a.name,
           genres: a.genres || [],
           popularity: a.popularity,
           followers: a.followers ? a.followers.total : 0,
-          image: a.images && a.images.length > 0 ? a.images[0].url : null,
-          imageSmall: a.images && a.images.length > 1 ? a.images[a.images.length - 1].url : null,
-        };
-      }),
-    });
+          image: img,
+        });
+      }
+    }
+
+    return res.status(200).json({ artists: artists });
+
   } catch (err) {
-    console.error("Spotify API error:", err);
-    return res.status(500).json({ error: "Spotify API error" });
+    console.error("Spotify error:", err.message || err);
+    return res.status(500).json({ error: "Spotify error: " + (err.message || "unknown") });
   }
 }
