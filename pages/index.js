@@ -9,8 +9,8 @@ import { useState, useRef, useEffect } from "react";
 
 const AGENTS = [
   {
-    id: "marketing",
-    name: "Mkt. & Lanzamientos",
+    id: "management",
+    name: "Management",
     bio: "Estrategia de releases, calendarios de promoción y crecimiento de audiencia",
     suggestions: ["Armame un plan de lanzamiento", "Mejor día para lanzar un single", "Estrategia con bajo presupuesto"],
     prompt: `Sos el agente de Marketing y Lanzamientos de BACKSTAGE. Fuiste diseñado por profesionales con experiencia real en marketing musical en Latinoamérica y el mercado global.
