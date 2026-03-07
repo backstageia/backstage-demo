@@ -22,13 +22,16 @@ var AGENTS = [
 function buildSystemPrompt(agent, artist) {
   var ctx = "";
   if (artist) {
-    ctx = "\n\nCONTEXTO DEL ARTISTA (data real de Spotify):";
-    ctx += "\n- Nombre: " + (artist.name || "N/A");
-    ctx += "\n- Géneros: " + (artist.genres || "N/A");
-    ctx += "\n- Oyentes/Seguidores Spotify: " + (artist.followers || "N/A") + " seguidores";
-    ctx += "\n- Popularidad Spotify: " + (artist.popularity || "N/A") + "/100";
+    ctx = "\n\nCONTEXTO DEL ARTISTA:";
+    ctx += "\n- Nombre: " + (artist.name || "No especificado");
+    ctx += "\n- Género: " + (artist.genres || artist.genre || "No especificado");
+    if (artist.followers) ctx += "\n- Seguidores Spotify: " + artist.followers;
+    if (artist.popularity) ctx += "\n- Popularidad Spotify: " + artist.popularity + "/100";
+    if (artist.listeners) ctx += "\n- Oyentes mensuales: " + artist.listeners;
     if (artist.topTracks) ctx += "\n- Top tracks: " + artist.topTracks;
     if (artist.relatedArtists) ctx += "\n- Artistas similares: " + artist.relatedArtists;
+    if (artist.cities) ctx += "\n- Top ciudades: " + artist.cities;
+    if (artist.instagram) ctx += "\n- Instagram: " + artist.instagram;
     ctx += "\n- Objetivo: " + (artist.goal || "No especificado");
   }
   return agent.prompt + ctx + "\n\nRespondé en español. Sé directo, práctico y accionable. Tono profesional pero cercano.";
@@ -36,34 +39,57 @@ function buildSystemPrompt(agent, artist) {
 
 var BG="#F7F6F3",WH="#FFFFFF",BD="#DDD9D4",AC="#C2410C",AD="rgba(194,65,12,0.06)",AB="rgba(194,65,12,0.15)",TX="#1A1917",SB="#5C5850",MT="#8C857B",DM="#B0A99F";
 
-/* ─── SPOTIFY SEARCH ONBOARDING ─── */
+function formatNumber(n) {
+  if (!n && n !== 0) return "—";
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return String(n);
+}
+
+/* ─── HYBRID ONBOARDING: Spotify search + manual fallback ─── */
 function Onboarding(props) {
-  var s1=useState("search"),step=s1[0],setStep=s1[1]; // search, results, goal
+  var s1=useState("search"),step=s1[0],setStep=s1[1];
+  // search | results | manual | goal
   var s2=useState(""),query=s2[0],setQuery=s2[1];
   var s3=useState([]),results=s3[0],setResults=s3[1];
   var s4=useState(false),loading=s4[0],setLoading=s4[1];
   var s5=useState(null),selected=s5[0],setSelected=s5[1];
   var s6=useState(""),goal=s6[0],setGoal=s6[1];
-  var s7=useState(false),loadingDetail=s7[0],setLoadingDetail=s7[1];
+  var s7=useState(false),spotifyError=s7[0],setSpotifyError=s7[1];
+  // Manual fields
+  var s8=useState(""),mName=s8[0],setMName=s8[1];
+  var s9=useState(""),mGenre=s9[0],setMGenre=s9[1];
+  var s10=useState(""),mListeners=s10[0],setMListeners=s10[1];
+  var s11=useState(""),mCities=s11[0],setMCities=s11[1];
+  var s12=useState(""),mIG=s12[0],setMIG=s12[1];
 
   function search() {
     if (!query.trim() || loading) return;
     setLoading(true);
     setResults([]);
+    setSpotifyError(false);
     fetch("/api/spotify?q=" + encodeURIComponent(query.trim()))
       .then(function(r) { return r.json(); })
       .then(function(data) {
+        if (data.error) {
+          setSpotifyError(true);
+          setStep("results");
+          setLoading(false);
+          return;
+        }
         setResults(data.artists || []);
         setStep("results");
         setLoading(false);
       })
-      .catch(function() { setLoading(false); });
+      .catch(function() {
+        setSpotifyError(true);
+        setStep("results");
+        setLoading(false);
+      });
   }
 
   function selectArtist(artist) {
-    setLoadingDetail(true);
-    setSelected(artist);
-    // Fetch full details + top tracks
+    setLoading(true);
     fetch("/api/spotify?id=" + artist.id)
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -71,29 +97,68 @@ function Onboarding(props) {
           id: artist.id,
           name: artist.name,
           image: artist.image,
-          genres: (data.artist && data.artist.genres) ? data.artist.genres.join(", ") : artist.genres.join(", "),
-          followers: data.artist ? data.artist.followers.total : artist.followers,
-          popularity: data.artist ? data.artist.popularity : artist.popularity,
-          topTracks: data.topTracks ? data.topTracks.map(function(t) { return t.name; }).join(", ") : "",
-          relatedArtists: data.relatedArtists ? data.relatedArtists.map(function(a) { return a.name; }).join(", ") : "",
+          genres: "",
+          followers: artist.followers,
+          popularity: artist.popularity,
+          topTracks: "",
+          relatedArtists: "",
         };
+        if (data.artist && data.artist.genres) {
+          full.genres = data.artist.genres.join(", ");
+        } else if (artist.genres && artist.genres.length > 0) {
+          full.genres = artist.genres.join(", ");
+        }
+        if (data.artist && data.artist.followers) {
+          full.followers = data.artist.followers.total;
+        }
+        if (data.artist) {
+          full.popularity = data.artist.popularity;
+        }
+        if (data.topTracks && data.topTracks.length > 0) {
+          full.topTracks = data.topTracks.map(function(t) { return t.name; }).join(", ");
+        }
+        if (data.relatedArtists && data.relatedArtists.length > 0) {
+          full.relatedArtists = data.relatedArtists.map(function(a) { return a.name; }).join(", ");
+        }
         setSelected(full);
         setStep("goal");
-        setLoadingDetail(false);
+        setLoading(false);
       })
-      .catch(function() { setLoadingDetail(false); setStep("goal"); });
+      .catch(function() {
+        // If detail fetch fails, use what we have
+        setSelected({
+          name: artist.name,
+          image: artist.image,
+          genres: artist.genres ? artist.genres.join(", ") : "",
+          followers: artist.followers,
+          popularity: artist.popularity,
+        });
+        setStep("goal");
+        setLoading(false);
+      });
+  }
+
+  function goManual() {
+    setMName(query || "");
+    setStep("manual");
+  }
+
+  function finishManual() {
+    if (!mName.trim()) return;
+    setSelected({
+      name: mName,
+      genre: mGenre,
+      listeners: mListeners,
+      cities: mCities,
+      instagram: mIG,
+    });
+    setStep("goal");
   }
 
   function finish() {
     if (!selected) return;
     selected.goal = goal;
     props.onComplete(selected);
-  }
-
-  function formatNumber(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
-    if (n >= 1000) return (n / 1000).toFixed(1) + "K";
-    return String(n);
   }
 
   return (
@@ -105,75 +170,127 @@ function Onboarding(props) {
           <span style={{fontWeight:800,fontSize:22,letterSpacing:-0.5}}>BACKSTAGE</span>
         </div>
 
-        {/* SEARCH STEP */}
+        {/* ─── SEARCH ─── */}
         {step === "search" && (
           <div>
-            <h1 style={{fontSize:36,fontWeight:800,letterSpacing:-2,lineHeight:1.05,marginBottom:16}}>Buscá tu artista en Spotify.</h1>
-            <p style={{color:SB,fontSize:16,marginBottom:32,lineHeight:1.6}}>Conectamos tu perfil de Spotify para que los agentes IA trabajen con tu data real: géneros, popularidad, top tracks y artistas similares.</p>
-            <div style={{display:"flex",gap:10}}>
-              <input
-                autoFocus
-                value={query}
-                onChange={function(e){setQuery(e.target.value);}}
-                onKeyDown={function(e){if(e.key==="Enter")search();}}
-                placeholder="Nombre del artista..."
-                style={{flex:1,padding:"14px 20px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:16,outline:"none"}}
-              />
-              <button onClick={search} disabled={loading || !query.trim()} style={{padding:"14px 28px",background:(!query.trim()||loading)?BD:AC,color:(!query.trim()||loading)?DM:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:(!query.trim()||loading)?"not-allowed":"pointer"}}>
-                {loading ? "Buscando..." : "Buscar"}
+            <h1 style={{fontSize:36,fontWeight:800,letterSpacing:-2,lineHeight:1.05,marginBottom:16}}>Buscá tu artista<br/>en Spotify.</h1>
+            <p style={{color:SB,fontSize:16,marginBottom:32,lineHeight:1.6}}>Conectamos tu perfil de Spotify para que los agentes IA trabajen con tu data real.</p>
+            <div style={{display:"flex",gap:10,marginBottom:16}}>
+              <input autoFocus value={query} onChange={function(e){setQuery(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")search();}} placeholder="Nombre del artista..."
+                style={{flex:1,padding:"14px 20px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:16,outline:"none"}}/>
+              <button onClick={search} disabled={loading||!query.trim()} style={{padding:"14px 28px",background:(!query.trim()||loading)?BD:AC,color:(!query.trim()||loading)?DM:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:(!query.trim()||loading)?"not-allowed":"pointer"}}>
+                {loading?"Buscando...":"Buscar"}
               </button>
             </div>
+            <button onClick={function(){setMName("");setStep("manual");}} style={{background:"none",border:"none",color:MT,fontSize:13,cursor:"pointer",padding:0,textDecoration:"underline"}}>
+              Ingresar datos manualmente
+            </button>
           </div>
         )}
 
-        {/* RESULTS STEP */}
+        {/* ─── RESULTS (Spotify or error) ─── */}
         {step === "results" && (
           <div>
-            <h2 style={{fontSize:26,fontWeight:700,letterSpacing:-1,marginBottom:8}}>Seleccioná tu perfil</h2>
-            <p style={{color:MT,fontSize:14,marginBottom:24}}>Resultados para "{query}"</p>
+            {spotifyError ? (
+              <div>
+                <h2 style={{fontSize:24,fontWeight:700,letterSpacing:-0.8,marginBottom:8}}>Spotify no disponible</h2>
+                <p style={{color:MT,fontSize:14,marginBottom:6}}>La conexión con Spotify no está activa en este momento.</p>
+                <p style={{color:MT,fontSize:14,marginBottom:24}}>Podés ingresar tus datos manualmente.</p>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={goManual} style={{padding:"12px 28px",background:AC,color:"white",border:"none",borderRadius:99,fontSize:14,fontWeight:700,cursor:"pointer"}}>Ingresar datos manualmente</button>
+                  <button onClick={function(){setStep("search");setQuery("");setSpotifyError(false);}} style={{padding:"12px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Reintentar</button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h2 style={{fontSize:24,fontWeight:700,letterSpacing:-0.8,marginBottom:8}}>Seleccioná tu perfil</h2>
+                <p style={{color:MT,fontSize:14,marginBottom:24}}>Resultados para "{query}"</p>
 
-            {results.length === 0 && !loading && (
-              <div style={{textAlign:"center",padding:"40px 0",color:MT}}>
-                <p style={{fontSize:15,marginBottom:16}}>No se encontraron resultados.</p>
-                <button onClick={function(){setStep("search");setQuery("");}} style={{padding:"10px 24px",background:"transparent",color:AC,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Buscar de nuevo</button>
+                {results.length === 0 && !loading && (
+                  <div style={{textAlign:"center",padding:"32px 0",color:MT}}>
+                    <p style={{fontSize:15,marginBottom:16}}>No se encontraron resultados.</p>
+                  </div>
+                )}
+
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {results.map(function(a) {
+                    return (
+                      <button key={a.id} onClick={function(){selectArtist(a);}} disabled={loading} style={{display:"flex",alignItems:"center",gap:16,padding:16,background:WH,border:"1px solid "+BD,borderRadius:14,cursor:loading?"wait":"pointer",textAlign:"left",width:"100%"}}>
+                        {a.image ? (
+                          <img src={a.image} alt="" style={{width:56,height:56,borderRadius:12,objectFit:"cover",flexShrink:0}} />
+                        ) : (
+                          <div style={{width:56,height:56,borderRadius:12,background:AD,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth={2}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                          </div>
+                        )}
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:15,fontWeight:600,color:TX}}>{a.name}</div>
+                          <div style={{fontSize:12,color:MT,marginTop:2}}>{a.genres && a.genres.length > 0 ? a.genres.slice(0,3).join(", ") : "Sin género"}</div>
+                        </div>
+                        <div style={{textAlign:"right",flexShrink:0}}>
+                          <div style={{fontSize:14,fontWeight:700,color:TX}}>{formatNumber(a.followers)}</div>
+                          <div style={{fontSize:10,color:DM}}>seguidores</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{marginTop:20,display:"flex",gap:10}}>
+                  <button onClick={function(){setStep("search");setQuery("");}} style={{padding:"10px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Buscar otro</button>
+                  <button onClick={goManual} style={{padding:"10px 24px",background:"transparent",color:MT,border:"none",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>Ingresar manualmente</button>
+                </div>
               </div>
             )}
+          </div>
+        )}
 
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {results.map(function(a) {
-                return (
-                  <button key={a.id} onClick={function(){selectArtist(a);}} disabled={loadingDetail} style={{display:"flex",alignItems:"center",gap:16,padding:16,background:WH,border:"1px solid "+BD,borderRadius:14,cursor:loadingDetail?"wait":"pointer",textAlign:"left",width:"100%",transition:"border-color 0.2s"}}>
-                    {a.image ? (
-                      <img src={a.image} alt="" style={{width:56,height:56,borderRadius:12,objectFit:"cover",flexShrink:0}} />
-                    ) : (
-                      <div style={{width:56,height:56,borderRadius:12,background:AD,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth={2}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                      </div>
-                    )}
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:15,fontWeight:600,color:TX}}>{a.name}</div>
-                      <div style={{fontSize:12,color:MT,marginTop:2}}>{a.genres.length > 0 ? a.genres.slice(0,3).join(", ") : "Sin género definido"}</div>
-                    </div>
-                    <div style={{textAlign:"right",flexShrink:0}}>
-                      <div style={{fontSize:14,fontWeight:700,color:TX}}>{formatNumber(a.followers)}</div>
-                      <div style={{fontSize:10,color:DM}}>seguidores</div>
-                    </div>
-                  </button>
-                );
-              })}
+        {/* ─── MANUAL ENTRY ─── */}
+        {step === "manual" && (
+          <div>
+            <h2 style={{fontSize:28,fontWeight:700,letterSpacing:-1,marginBottom:8}}>Ingresá tus datos</h2>
+            <p style={{color:MT,fontSize:14,marginBottom:28}}>Solo el nombre es obligatorio. El resto ayuda a personalizar las recomendaciones.</p>
+
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:6}}>Nombre artístico <span style={{color:AC}}>*</span></label>
+              <input autoFocus value={mName} onChange={function(e){setMName(e.target.value);}} placeholder="Ej: Luna Roja"
+                style={{width:"100%",padding:"14px 18px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/>
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:6}}>Género musical</label>
+              <input value={mGenre} onChange={function(e){setMGenre(e.target.value);}} placeholder="Ej: Trap, Indie Rock, Pop Urbano"
+                style={{width:"100%",padding:"14px 18px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+              <div>
+                <label style={{fontSize:12,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:6}}>Oyentes mensuales</label>
+                <input value={mListeners} onChange={function(e){setMListeners(e.target.value);}} placeholder="Ej: 5.000"
+                  style={{width:"100%",padding:"14px 18px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:12,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:6}}>Instagram</label>
+                <input value={mIG} onChange={function(e){setMIG(e.target.value);}} placeholder="Ej: @lunaroja"
+                  style={{width:"100%",padding:"14px 18px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:24}}>
+              <label style={{fontSize:12,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:6}}>Ciudades principales</label>
+              <input value={mCities} onChange={function(e){setMCities(e.target.value);}} placeholder="Ej: Buenos Aires, CDMX, Bogotá"
+                style={{width:"100%",padding:"14px 18px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/>
             </div>
 
-            <div style={{marginTop:20,display:"flex",gap:10}}>
-              <button onClick={function(){setStep("search");setQuery("");}} style={{padding:"10px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Buscar otro</button>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={finishManual} disabled={!mName.trim()} style={{padding:"12px 32px",background:!mName.trim()?BD:AC,color:!mName.trim()?DM:"white",border:"none",borderRadius:99,fontSize:14,fontWeight:700,cursor:!mName.trim()?"not-allowed":"pointer"}}>Continuar</button>
+              <button onClick={function(){setStep("search");}} style={{padding:"12px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Volver a buscar</button>
             </div>
           </div>
         )}
 
-        {/* GOAL STEP (after selecting artist) */}
+        {/* ─── GOAL (final step after Spotify or manual) ─── */}
         {step === "goal" && selected && (
           <div>
             {/* Selected artist card */}
-            <div style={{display:"flex",alignItems:"center",gap:16,padding:20,background:WH,border:"1px solid "+BD,borderRadius:16,marginBottom:32}}>
+            <div style={{display:"flex",alignItems:"center",gap:16,padding:20,background:WH,border:"1px solid "+BD,borderRadius:16,marginBottom:24}}>
               {selected.image ? (
                 <img src={selected.image} alt="" style={{width:64,height:64,borderRadius:14,objectFit:"cover"}} />
               ) : (
@@ -183,35 +300,42 @@ function Onboarding(props) {
               )}
               <div style={{flex:1}}>
                 <div style={{fontSize:18,fontWeight:700,color:TX}}>{selected.name}</div>
-                <div style={{fontSize:13,color:MT,marginTop:2}}>{selected.genres || "Sin género"}</div>
-                <div style={{display:"flex",gap:16,marginTop:6}}>
-                  <span style={{fontSize:12,color:SB}}><strong>{formatNumber(selected.followers)}</strong> seguidores</span>
-                  <span style={{fontSize:12,color:SB}}>Popularidad: <strong>{selected.popularity}/100</strong></span>
-                </div>
+                <div style={{fontSize:13,color:MT,marginTop:2}}>{selected.genres || selected.genre || "Sin género"}</div>
+                {selected.followers ? (
+                  <div style={{display:"flex",gap:16,marginTop:6}}>
+                    <span style={{fontSize:12,color:SB}}><strong>{formatNumber(selected.followers)}</strong> seguidores</span>
+                    {selected.popularity ? <span style={{fontSize:12,color:SB}}>Popularidad: <strong>{selected.popularity}/100</strong></span> : null}
+                  </div>
+                ) : null}
+                {selected.listeners ? (
+                  <div style={{fontSize:12,color:SB,marginTop:4}}>{selected.listeners} oyentes/mes</div>
+                ) : null}
               </div>
               <div style={{width:8,height:8,borderRadius:99,background:"#047857"}}/>
             </div>
 
-            {selected.topTracks && (
-              <div style={{marginBottom:24}}>
-                <div style={{fontSize:12,color:MT,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontWeight:600}}>Top tracks</div>
+            {selected.topTracks ? (
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,color:MT,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontWeight:600}}>Top tracks</div>
                 <div style={{fontSize:13,color:SB,lineHeight:1.6}}>{selected.topTracks}</div>
               </div>
-            )}
+            ) : null}
 
-            <h2 style={{fontSize:24,fontWeight:700,letterSpacing:-0.8,marginBottom:8}}>Una última cosa</h2>
-            <p style={{color:MT,fontSize:14,marginBottom:20}}>¿Cuál es tu objetivo principal en los próximos 6 meses? (opcional)</p>
-            <input
-              autoFocus
-              value={goal}
-              onChange={function(e){setGoal(e.target.value);}}
-              onKeyDown={function(e){if(e.key==="Enter")finish();}}
-              placeholder="Ej: Llegar a 10K oyentes, lanzar EP, primer show en vivo..."
-              style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none",marginBottom:24}}
-            />
+            {selected.relatedArtists ? (
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,color:MT,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontWeight:600}}>Artistas similares</div>
+                <div style={{fontSize:13,color:SB,lineHeight:1.6}}>{selected.relatedArtists}</div>
+              </div>
+            ) : null}
+
+            <h2 style={{fontSize:22,fontWeight:700,letterSpacing:-0.5,marginBottom:8}}>Una última cosa</h2>
+            <p style={{color:MT,fontSize:14,marginBottom:16}}>¿Cuál es tu objetivo principal en los próximos 6 meses? (opcional)</p>
+            <input autoFocus value={goal} onChange={function(e){setGoal(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")finish();}}
+              placeholder="Ej: Llegar a 10K oyentes, lanzar EP, primer show..."
+              style={{width:"100%",padding:"14px 20px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none",marginBottom:24}}/>
             <div style={{display:"flex",gap:10}}>
               <button onClick={finish} style={{padding:"14px 36px",background:AC,color:"white",border:"none",borderRadius:99,fontSize:15,fontWeight:700,cursor:"pointer"}}>Entrar a BACKSTAGE</button>
-              <button onClick={function(){setStep("search");setQuery("");setSelected(null);}} style={{padding:"14px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Cambiar artista</button>
+              <button onClick={function(){setStep("search");setQuery("");setSelected(null);setSpotifyError(false);}} style={{padding:"14px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Cambiar artista</button>
             </div>
           </div>
         )}
@@ -292,12 +416,6 @@ function AppDashboard(props) {
   var aa=useState("marketing"),activeId=aa[0],setActiveId=aa[1];
   var agent=AGENTS.find(function(a){return a.id===activeId;});
 
-  function formatNumber(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
-    if (n >= 1000) return (n / 1000).toFixed(1) + "K";
-    return String(n);
-  }
-
   return (
     <div style={{display:"flex",height:"100vh",background:BG,color:TX,fontFamily:"system-ui,sans-serif",overflow:"hidden"}}>
       <div style={{width:280,background:WH,borderRight:"1px solid "+BD,padding:"28px 20px",display:"flex",flexDirection:"column"}}>
@@ -312,7 +430,7 @@ function AppDashboard(props) {
             <div><div style={{fontSize:14,fontWeight:act?600:400}}>{a.name}</div>
               {act?<div style={{fontSize:11,color:MT,marginTop:2,lineHeight:1.3}}>{a.bio}</div>:null}</div></button>);})}
         <div style={{flex:1}}/>
-        {/* Artist card with Spotify data */}
+        {/* Artist card */}
         <div style={{padding:16,background:BG,borderRadius:14,border:"1px solid "+BD}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
             {artist.image ? (
@@ -324,12 +442,13 @@ function AppDashboard(props) {
             )}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:14,fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{artist.name}</div>
-              <div style={{fontSize:11,color:MT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{artist.genres||"Sin género"}</div>
+              <div style={{fontSize:11,color:MT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{artist.genres||artist.genre||"Sin género"}</div>
             </div>
           </div>
           <div style={{display:"flex",gap:12}}>
-            <div><div style={{fontSize:14,fontWeight:700}}>{formatNumber(artist.followers)}</div><div style={{fontSize:10,color:DM}}>seguidores</div></div>
-            <div><div style={{fontSize:14,fontWeight:700}}>{artist.popularity}/100</div><div style={{fontSize:10,color:DM}}>popularidad</div></div>
+            {artist.followers ? <div><div style={{fontSize:14,fontWeight:700}}>{formatNumber(artist.followers)}</div><div style={{fontSize:10,color:DM}}>seguidores</div></div> : null}
+            {artist.popularity ? <div><div style={{fontSize:14,fontWeight:700}}>{artist.popularity}/100</div><div style={{fontSize:10,color:DM}}>popularidad</div></div> : null}
+            {artist.listeners ? <div><div style={{fontSize:14,fontWeight:700}}>{artist.listeners}</div><div style={{fontSize:10,color:DM}}>oyentes/mes</div></div> : null}
           </div>
         </div>
       </div>
