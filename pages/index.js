@@ -56,7 +56,8 @@ function LogoFull(props){
     <img 
       src="/logo.png" 
       alt="BACKSTAGE" 
-      style={{ height: 32 * s, objectFit: "contain", display: "block" }} 
+      // Aumentamos el tamaño base de 32 a 42 para que se vea más grande en general
+      style={{ height: 42 * s, objectFit: "contain", display: "block" }} 
     />
   );
 }
@@ -83,7 +84,8 @@ function Splash(props){
       <div style={{position:"absolute",bottom:"-20%",left:"-10%",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle, rgba(0, 212, 255, 0.08) 0%, transparent 70%)",filter:"blur(60px)",pointerEvents:"none"}}/>
 
       <div style={{opacity:s1?1:0,transform:s1?"translateY(0) scale(1)":"translateY(20px) scale(0.95)",transition:"all 0.9s cubic-bezier(0.16,1,0.3,1)",marginBottom:24, zIndex:10}}>
-        <LogoFull scale={2.5} />
+        {/* ESCALA PARA PANTALLA INICIAL (Aumentado de 2.5 a 3.5) */}
+        <LogoFull scale={3.5} />
       </div>
       <div style={{opacity:s3?1:0,transform:s3?"translateY(0)":"translateY(10px)",transition:"all 0.6s ease",marginBottom:48, zIndex:10}}>
         <p style={{fontSize:20,color:SB,textAlign:"center",fontWeight:500}}>AI for Independent Artists</p>
@@ -122,14 +124,17 @@ function Onboarding(props){
     <div style={{minHeight:"100vh",background:BG,display:"flex",alignItems:"center",justifyContent:"center",padding:40,color:TX}}>
       <style>{STYLES}</style>
       <div style={{maxWidth:560,width:"100%"}} className="au">
-        <div style={{marginBottom:48}}><LogoFull scale={1.1}/></div>
+        <div style={{marginBottom:48}}>
+          {/* ESCALA PARA ONBOARDING */}
+          <LogoFull scale={1.3}/>
+        </div>
 
         {step==="search"&&(<div>
           <h1 style={{fontSize:32,fontWeight:800,letterSpacing:-1,lineHeight:1.1,marginBottom:12,color:TX}}>Conectá tu perfil de Spotify.</h1>
           <p style={{color:SB,fontSize:15,marginBottom:32,lineHeight:1.6}}>Los agentes trabajan con tu data real para darte mejores estrategias.</p>
           <div style={{display:"flex",gap:10,marginBottom:16}}>
             <input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")search();}} placeholder="Nombre del artista..."
-              style={{flex:1,padding:"14px 20px",borderRadius:12,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:16,outline:"none"}}/>
+              style={{flex:1,padding:"14px 20px",borderRadius:12,border:"1px solid "+BD,background:WH,color:TX,fontSize:16,outline:"none"}}/>
             <button onClick={search} disabled={ld||!q.trim()} style={{padding:"14px 28px",background:(!q.trim()||ld)?BD:GRAD,color:(!q.trim()||ld)?DM:"white",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:(!q.trim()||ld)?"not-allowed":"pointer"}}>
               {ld?"Buscando...":"Buscar"}</button></div>
           <button onClick={function(){smN("");setStep("manual");}} style={{background:"none",border:"none",color:MT,fontSize:13,cursor:"pointer",textDecoration:"underline"}}>Ingresar datos manualmente</button>
@@ -380,7 +385,8 @@ function AppDashboard(props){
       <style>{STYLES}</style>
       <div style={{width:272,background:WH,borderRight:"1px solid "+BD,padding:"20px 14px",display:"flex",flexDirection:"column"}}>
         <div style={{padding:"4px 8px 20px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8}}>
-          <LogoFull scale={0.9}/>
+          {/* ESCALA PARA BARRA LATERAL (Aumentado de 0.9 a 1.3) */}
+          <LogoFull scale={1.3}/>
         </div>
         <div style={{margin:"0 8px 18px",padding:"9px 14px",borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 12px rgba(124,92,255,0.2)"}}>
           <span style={{fontSize:12,fontWeight:700,color:"white"}}>Plan Pro</span><span style={{fontSize:10,color:"rgba(255,255,255,0.8)"}}>Trial</span></div>
