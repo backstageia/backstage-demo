@@ -41,22 +41,29 @@ function buildSystemPrompt(agent,artist){
   return agent.prompt+ctx+"\n\nRespondé en español. Sé directo, práctico y accionable. Tono profesional pero cercano.";
 }
 
-/* ═══ BRAND COLORS — Orange Theme (#C2410C) ═══ */
-var BG="#FDF8F5",WH="#FFFFFF",BD="#E6D5CC",TX="#431407",SB="#7C2D12",MT="#9A4D31",DM="#D4A38D";
-var PRIMARY="#C2410C", DARK="#7C2D12", GRAD="linear-gradient(135deg, #C2410C, #EA580C)", GRAD2="linear-gradient(135deg, #EA580C, #F97316)";
-var AD="rgba(194,65,12,0.08)",AB="rgba(194,65,12,0.18)",AC=DARK;
+/* ═══ BRAND COLORS — Light Theme with Tech Purple & Cyan ═══ */
+var BG="#F8F9FA", WH="#FFFFFF", BD="#E2E8F0", TX="#0F172A", SB="#475569", MT="#64748B", DM="#94A3B8";
+var PRIMARY="#7C5CFF", SECONDARY="#00D4FF", DARK_NAV="#151828";
+var GRAD="linear-gradient(135deg, #7C5CFF, #00D4FF)";
+var AD="rgba(124, 92, 255, 0.08)", AB="rgba(124, 92, 255, 0.15)";
 
 function fmt(n){if(!n&&n!==0)return"—";if(n>=1000000)return(n/1000000).toFixed(1)+"M";if(n>=1000)return(n/1000).toFixed(1)+"K";return String(n);}
 
-/* ═══ ISOLOGO SVG ═══ */
+/* ═══ ISOLOGO SVG (Diagonal Split Square) ═══ */
 function IsoLogo(props){
-  var s=props.size||40;
+  var s=props.size||32;
   return(
     <svg width={s} height={s} viewBox="0 0 48 48" fill="none">
-      <defs><linearGradient id="bg" x1="0" y1="0" x2="48" y2="48"><stop offset="0%" stopColor={PRIMARY}/><stop offset="100%" stopColor="#EA580C"/></linearGradient></defs>
-      <rect width="48" height="48" rx="12" fill="url(#bg)"/>
-      <path d="M16 34L24 14L32 34" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <line x1="19" y1="27" x2="29" y2="27" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+      <defs>
+        <linearGradient id="gradBrand" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={PRIMARY}/>
+          <stop offset="100%" stopColor={SECONDARY}/>
+        </linearGradient>
+      </defs>
+      {/* Top Left Dark Triangle */}
+      <polygon points="0,0 48,0 0,48" fill={DARK_NAV} />
+      {/* Bottom Right Gradient Triangle */}
+      <polygon points="48,48 48,0 0,48" fill="url(#gradBrand)" />
     </svg>
   );
 }
@@ -65,20 +72,22 @@ function LogoFull(props){
   var s=props.scale||1;
   return(
     <div style={{display:"flex",alignItems:"center",gap:10*s}}>
-      <IsoLogo size={32*s}/>
-      <div>
-        <div style={{fontSize:18*s,fontWeight:800,color:DARK,letterSpacing:-0.5*s,lineHeight:1}}>BACKSTAGE</div>
+      <IsoLogo size={28*s}/>
+      <div style={{fontSize:22*s,fontWeight:800,color:DARK_NAV,letterSpacing:-0.5*s,lineHeight:1}}>
+        BACKSTAGE
       </div>
     </div>
   );
 }
 
-var STYLES = `*{margin:0;padding:0;box-sizing:border-box}body{background:${BG};font-family:system-ui,-apple-system,sans-serif}::selection{background:${PRIMARY};color:white}input:focus{outline:none;border-color:${PRIMARY}!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${BD};border-radius:9px}
+var STYLES = `@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{background:${BG};font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;color:${TX}}::selection{background:${PRIMARY};color:white}input:focus{outline:none;border-color:${PRIMARY}!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:${BD};border-radius:9px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-.au{animation:fadeUp .6s ease both}.ai{animation:fadeIn .5s ease both}.as{animation:slideIn .35s ease both}.ac{animation:scaleIn .35s ease both}`;
+.au{animation:fadeUp .6s ease both}.ai{animation:fadeIn .5s ease both}.as{animation:slideIn .35s ease both}.ac{animation:scaleIn .35s ease both}
+input{font-family:'Plus Jakarta Sans',sans-serif}`;
 
 /* ═══ SPLASH ═══ */
 function Splash(props){
@@ -87,21 +96,23 @@ function Splash(props){
   return(
     <div style={{minHeight:"100vh",background:BG,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:40,position:"relative",overflow:"hidden"}}>
       <style>{STYLES}</style>
-      <div style={{position:"absolute",top:"-20%",right:"-10%",width:600,height:600,borderRadius:"50%",background:"radial-gradient(circle, rgba(194,65,12,0.06) 0%, transparent 70%)",filter:"blur(60px)",pointerEvents:"none"}}/>
       
-      <div style={{opacity:s1?1:0,transform:s1?"translateY(0) scale(1)":"translateY(20px) scale(0.95)",transition:"all 0.9s cubic-bezier(0.16,1,0.3,1)",marginBottom:20}}>
-        <IsoLogo size={80}/>
+      {/* Subtle light mode glowing accent */}
+      <div style={{position:"absolute",top:"-20%",right:"-10%",width:600,height:600,borderRadius:"50%",background:"radial-gradient(circle, rgba(124, 92, 255, 0.08) 0%, transparent 70%)",filter:"blur(60px)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:"-20%",left:"-10%",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle, rgba(0, 212, 255, 0.08) 0%, transparent 70%)",filter:"blur(60px)",pointerEvents:"none"}}/>
+
+      <div style={{opacity:s1?1:0,transform:s1?"translateY(0) scale(1)":"translateY(20px) scale(0.95)",transition:"all 0.9s cubic-bezier(0.16,1,0.3,1)",marginBottom:24, zIndex:10}}>
+        <LogoFull scale={2.5} />
       </div>
-      <div style={{opacity:s1?1:0,transform:s1?"translateY(0)":"translateY(16px)",transition:"all 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s",marginBottom:48}}>
-        {/* Agrandado el texto BACKSTAGE */}
-        <span style={{fontSize:56,fontWeight:800,color:DARK,letterSpacing:-2}}>BACKSTAGE</span>
+      <div style={{opacity:s3?1:0,transform:s3?"translateY(0)":"translateY(10px)",transition:"all 0.6s ease",marginBottom:48, zIndex:10}}>
+        <p style={{fontSize:20,color:SB,textAlign:"center",fontWeight:500}}>AI for Independent Artists</p>
       </div>
       
-      <div style={{opacity:s3?1:0,transform:s3?"scale(1)":"scale(0.9)",transition:"all 0.5s cubic-bezier(0.16,1,0.3,1)",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
-        <button onClick={props.onStart} style={{padding:"16px 52px",background:GRAD,color:"white",border:"none",borderRadius:99,fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 24px rgba(194,65,12,0.25)",transition:"transform 0.2s,box-shadow 0.2s"}}
-          onMouseOver={function(e){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 8px 32px rgba(194,65,12,0.35)";}}
-          onMouseOut={function(e){e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 4px 24px rgba(194,65,12,0.25)";}}>
-          Comenzar</button>
+      <div style={{opacity:s3?1:0,transform:s3?"scale(1)":"scale(0.9)",transition:"all 0.5s cubic-bezier(0.16,1,0.3,1)",display:"flex",flexDirection:"column",alignItems:"center",gap:14, zIndex:10}}>
+        <button onClick={props.onStart} style={{padding:"16px 52px",background:GRAD,color:"white",border:"none",borderRadius:99,fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 8px 24px rgba(124, 92, 255, 0.3)",transition:"transform 0.2s,box-shadow 0.2s"}}
+          onMouseOver={function(e){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 12px 32px rgba(124, 92, 255, 0.4)";}}
+          onMouseOut={function(e){e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 8px 24px rgba(124, 92, 255, 0.3)";}}>
+          Get Started</button>
       </div>
     </div>
   );
@@ -121,7 +132,6 @@ function Onboarding(props){
   function selArt(a){setLd(true);fetch("/api/spotify?id="+a.id).then(function(r){return r.json();}).then(function(d){
     var f={id:a.id,name:a.name,image:a.image,genres:""};
     if(d.artist&&d.artist.genres)f.genres=d.artist.genres.join(", ");else if(a.genres&&a.genres.length>0)f.genres=a.genres.join(", ");
-    // Simulamos oyentes mensuales si no están por carga manual (ya que la API no los trae)
     f.listeners = "15.000"; 
     setSel(f);setStep("goal");setLd(false);}).catch(function(){setSel({name:a.name,image:a.image,genres:a.genres?a.genres.join(", "):""});setStep("goal");setLd(false);});}
   function finMan(){if(!mN.trim())return;setSel({name:mN,genre:mG,listeners:mL,cities:mC,instagram:mI});setStep("goal");}
@@ -134,7 +144,7 @@ function Onboarding(props){
         <div style={{marginBottom:48}}><LogoFull scale={1.1}/></div>
 
         {step==="search"&&(<div>
-          <h1 style={{fontSize:32,fontWeight:800,letterSpacing:-1.5,lineHeight:1.05,marginBottom:12,color:DARK}}>Conectá tu perfil de Spotify.</h1>
+          <h1 style={{fontSize:32,fontWeight:800,letterSpacing:-1,lineHeight:1.1,marginBottom:12,color:TX}}>Conectá tu perfil de Spotify.</h1>
           <p style={{color:SB,fontSize:15,marginBottom:32,lineHeight:1.6}}>Los agentes trabajan con tu data real para darte mejores estrategias.</p>
           <div style={{display:"flex",gap:10,marginBottom:16}}>
             <input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")search();}} placeholder="Nombre del artista..."
@@ -147,24 +157,24 @@ function Onboarding(props){
         {step==="results"&&(<div className="au">
           {spE?(<div>
             <div style={{padding:28,background:WH,border:"1px solid "+BD,borderRadius:16,textAlign:"center",marginBottom:20}}>
-              <h3 style={{fontSize:17,fontWeight:700,color:DARK,marginBottom:6}}>Spotify no disponible</h3>
+              <h3 style={{fontSize:17,fontWeight:700,color:TX,marginBottom:6}}>Spotify no disponible</h3>
               <p style={{fontSize:13,color:MT}}>Podés ingresar tus datos manualmente.</p></div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={function(){smN(q||"");setStep("manual");}} style={{padding:"12px 28px",background:GRAD,color:"white",border:"none",borderRadius:99,fontSize:14,fontWeight:700,cursor:"pointer"}}>Ingresar manualmente</button>
               <button onClick={function(){setStep("search");setQ("");setSpE(false);}} style={{padding:"12px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Reintentar</button></div>
           </div>):(<div>
-            <h2 style={{fontSize:22,fontWeight:700,color:DARK,marginBottom:6}}>Seleccioná tu perfil</h2>
+            <h2 style={{fontSize:22,fontWeight:700,color:TX,marginBottom:6}}>Seleccioná tu perfil</h2>
             <p style={{color:MT,fontSize:13,marginBottom:20}}>Resultados para "<strong>{q}</strong>"</p>
             {res.length===0&&!ld?<div style={{textAlign:"center",padding:"32px 0",color:MT}}>No se encontraron resultados.</div>:null}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {res.map(function(a,idx){return(
                 <button key={a.id} onClick={function(){selArt(a);}} disabled={ld} className="au" style={{display:"flex",alignItems:"center",gap:16,padding:16,background:WH,border:"1px solid "+BD,borderRadius:14,cursor:ld?"wait":"pointer",textAlign:"left",width:"100%",transition:"all 0.2s",animationDelay:idx*50+"ms"}}
-                  onMouseOver={function(e){e.currentTarget.style.borderColor=PRIMARY;e.currentTarget.style.boxShadow="0 2px 12px rgba(194,65,12,0.08)";}}
+                  onMouseOver={function(e){e.currentTarget.style.borderColor=PRIMARY;e.currentTarget.style.boxShadow="0 4px 12px rgba(124, 92, 255, 0.08)";}}
                   onMouseOut={function(e){e.currentTarget.style.borderColor=BD;e.currentTarget.style.boxShadow="none";}}>
                   {a.image?<img src={a.image} alt="" style={{width:52,height:52,borderRadius:12,objectFit:"cover",flexShrink:0}}/>:
                   <div style={{width:52,height:52,borderRadius:12,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20,fontWeight:800,color:"white"}}>{a.name.charAt(0)}</div>}
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:15,fontWeight:600,color:DARK}}>{a.name}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:TX}}>{a.name}</div>
                     <div style={{fontSize:12,color:MT,marginTop:2}}>{a.genres&&a.genres.length>0?a.genres.slice(0,3).join(", "):"Sin género"}</div>
                   </div>
                 </button>);})}
@@ -176,17 +186,17 @@ function Onboarding(props){
         </div>)}
 
         {step==="manual"&&(<div className="au">
-          <h2 style={{fontSize:24,fontWeight:700,color:DARK,marginBottom:6}}>Ingresá tus datos</h2>
+          <h2 style={{fontSize:24,fontWeight:700,color:TX,marginBottom:6}}>Ingresá tus datos</h2>
           <p style={{color:MT,fontSize:13,marginBottom:24}}>Solo el nombre es obligatorio.</p>
           <div style={{marginBottom:14}}><label style={{fontSize:11,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Nombre artístico <span style={{color:PRIMARY}}>*</span></label>
-            <input autoFocus value={mN} onChange={function(e){smN(e.target.value);}} placeholder="Ej: Luna Roja" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
+            <input autoFocus value={mN} onChange={function(e){smN(e.target.value);}} placeholder="Ej: Luna Roja" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
           <div style={{marginBottom:14}}><label style={{fontSize:11,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Género musical</label>
-            <input value={mG} onChange={function(e){smG(e.target.value);}} placeholder="Ej: Trap, Indie Rock" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
+            <input value={mG} onChange={function(e){smG(e.target.value);}} placeholder="Ej: Trap, Indie Rock" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
             <div><label style={{fontSize:11,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Oyentes mensuales</label>
-              <input value={mL} onChange={function(e){smL(e.target.value);}} placeholder="Ej: 5.000" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
+              <input value={mL} onChange={function(e){smL(e.target.value);}} placeholder="Ej: 5.000" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div>
             <div><label style={{fontSize:11,fontWeight:600,color:MT,textTransform:"uppercase",letterSpacing:1,display:"block",marginBottom:5}}>Instagram</label>
-              <input value={mI} onChange={function(e){smI(e.target.value);}} placeholder="@lunaroja" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div></div>
+              <input value={mI} onChange={function(e){smI(e.target.value);}} placeholder="@lunaroja" style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none"}}/></div></div>
           <div style={{display:"flex",gap:10}}>
             <button onClick={finMan} disabled={!mN.trim()} style={{padding:"12px 32px",background:!mN.trim()?BD:GRAD,color:!mN.trim()?DM:"white",border:"none",borderRadius:99,fontSize:14,fontWeight:700,cursor:!mN.trim()?"not-allowed":"pointer"}}>Continuar</button>
             <button onClick={function(){setStep("search");}} style={{padding:"12px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Volver</button></div>
@@ -196,16 +206,16 @@ function Onboarding(props){
           <div style={{display:"flex",alignItems:"center",gap:16,padding:20,background:WH,border:"1px solid "+BD,borderRadius:16,marginBottom:20}}>
             {sel.image?<img src={sel.image} alt="" style={{width:60,height:60,borderRadius:14,objectFit:"cover"}}/>:
             <div style={{width:60,height:60,borderRadius:14,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:800,color:"white"}}>{sel.name.charAt(0)}</div>}
-            <div style={{flex:1}}><div style={{fontSize:17,fontWeight:700,color:DARK}}>{sel.name}</div>
+            <div style={{flex:1}}><div style={{fontSize:17,fontWeight:700,color:TX}}>{sel.name}</div>
               <div style={{fontSize:13,color:MT,marginTop:2}}>{sel.genres||sel.genre||"Sin género"}</div>
             </div>
-            <div style={{width:8,height:8,borderRadius:99,background:"#047857"}}/></div>
-          <h2 style={{fontSize:20,fontWeight:700,color:DARK,marginBottom:6}}>Una última cosa</h2>
+            <div style={{width:8,height:8,borderRadius:99,background:SECONDARY,boxShadow:"0 0 10px "+SECONDARY}}/></div>
+          <h2 style={{fontSize:20,fontWeight:700,color:TX,marginBottom:6}}>Una última cosa</h2>
           <p style={{color:MT,fontSize:13,marginBottom:16}}>¿Tu objetivo en los próximos 6 meses? (opcional)</p>
           <input autoFocus value={goal} onChange={function(e){setGoal(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")finish();}}
-            placeholder="Ej: 10K oyentes, lanzar EP, primer show..." style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1.5px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none",marginBottom:22}}/>
+            placeholder="Ej: 10K oyentes, lanzar EP, primer show..." style={{width:"100%",padding:"13px 18px",borderRadius:10,border:"1px solid "+BD,background:WH,color:TX,fontSize:15,outline:"none",marginBottom:22}}/>
           <div style={{display:"flex",gap:10}}>
-            <button onClick={finish} style={{padding:"14px 36px",background:GRAD,color:"white",border:"none",borderRadius:99,fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 16px rgba(194,65,12,0.2)"}}>Entrar a BACKSTAGE</button>
+            <button onClick={finish} style={{padding:"14px 36px",background:GRAD,color:"white",border:"none",borderRadius:99,fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 16px rgba(124, 92, 255, 0.25)"}}>Entrar a BACKSTAGE</button>
             <button onClick={function(){setStep("search");setQ("");setSel(null);setSpE(false);}} style={{padding:"14px 24px",background:"transparent",color:MT,border:"1px solid "+BD,borderRadius:99,fontSize:14,cursor:"pointer"}}>Cambiar</button></div>
         </div>)}
       </div>
@@ -235,12 +245,12 @@ function Chat(props){
       <div style={{padding:"14px 28px",borderBottom:"1px solid "+BD,background:WH,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <div style={{width:36,height:36,borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:"white"}}>{agent.icon}</div>
-          <div><div style={{fontSize:14,fontWeight:700,color:DARK}}>{agent.name}</div><div style={{fontSize:11,color:DM}}>Mis Agentes &gt; {agent.name}</div></div></div>
+          <div><div style={{fontSize:14,fontWeight:700,color:TX}}>{agent.name}</div><div style={{fontSize:11,color:DM}}>Mis Agentes &gt; {agent.name}</div></div></div>
       </div>
       <div ref={ref} style={{flex:1,overflowY:"auto",padding:28,display:"flex",flexDirection:"column",gap:14,background:BG}}>
         {msgs.length===0?(<div style={{textAlign:"center",padding:"56px 20px"}} className="au">
           <div style={{width:48,height:48,borderRadius:12,background:GRAD,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:18,fontWeight:700,color:"white"}}>{agent.icon}</div>
-          <h3 style={{fontSize:19,fontWeight:700,color:DARK,marginBottom:6}}>{agent.name}</h3>
+          <h3 style={{fontSize:19,fontWeight:700,color:TX,marginBottom:6}}>{agent.name}</h3>
           <p style={{color:MT,fontSize:14,maxWidth:400,margin:"0 auto 24px",lineHeight:1.5}}>{agent.bio}</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
             {agent.suggestions.map(function(s){return <button key={s} onClick={function(){send(s);}} style={{padding:"9px 18px",borderRadius:99,border:"1px solid "+BD,background:WH,color:SB,fontSize:13,cursor:"pointer",transition:"all 0.2s"}}
@@ -250,9 +260,9 @@ function Chat(props){
         {msgs.map(function(m,i){var u=m.role==="user";return(
           <div key={i} style={{display:"flex",justifyContent:u?"flex-end":"flex-start"}} className="as">
             <div style={{maxWidth:"75%"}}><div style={{padding:"14px 18px",fontSize:14,lineHeight:1.75,whiteSpace:"pre-wrap",
-              background:u?DARK:WH,color:u?"#FFF":TX,borderRadius:u?"18px 18px 4px 18px":"18px 18px 18px 4px",
-              border:u?"none":"1px solid "+BD,boxShadow:u?"none":"0 1px 4px rgba(0,0,0,0.04)"}}>
-              {!u?<div style={{fontSize:10,color:PRIMARY,fontWeight:600,marginBottom:6,textTransform:"uppercase",letterSpacing:0.8,display:"flex",alignItems:"center",gap:5}}>
+              background:u?GRAD:WH,color:u?"#FFF":TX,borderRadius:u?"18px 18px 4px 18px":"18px 18px 18px 4px",
+              border:u?"none":"1px solid "+BD,boxShadow:u?"0 4px 12px rgba(124,92,255,0.2)":"0 1px 4px rgba(0,0,0,0.05)"}}>
+              {!u?<div style={{fontSize:10,color:PRIMARY,fontWeight:700,marginBottom:6,textTransform:"uppercase",letterSpacing:0.8,display:"flex",alignItems:"center",gap:5}}>
                 <div style={{width:5,height:5,borderRadius:99,background:PRIMARY}}/>{agent.name}</div>:null}
               {m.text}</div></div></div>);})}
         {ld?<div style={{display:"flex",gap:4,padding:"16px 20px",borderRadius:"18px 18px 18px 4px",background:WH,border:"1px solid "+BD,width:"fit-content"}}><div style={{width:6,height:6,borderRadius:99,background:PRIMARY}}/></div>:null}
@@ -263,7 +273,7 @@ function Chat(props){
       <div style={{padding:14,borderTop:"1px solid "+BD,background:WH}}>
         <div style={{display:"flex",gap:10}}>
           <input value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")send();}} placeholder="Escribí tu consulta..." disabled={ld}
-            style={{flex:1,padding:"12px 18px",borderRadius:99,border:"1.5px solid "+BD,background:BG,color:TX,fontSize:14,outline:"none"}}/>
+            style={{flex:1,padding:"12px 18px",borderRadius:99,border:"1px solid "+BD,background:BG,color:TX,fontSize:14,outline:"none"}}/>
           <button onClick={function(){send();}} disabled={ld||!input.trim()}
             style={{width:44,height:44,borderRadius:99,border:"none",background:(!input.trim()||ld)?BD:GRAD,color:(!input.trim()||ld)?DM:"white",cursor:(!input.trim()||ld)?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
             ►
@@ -289,8 +299,8 @@ function Dashboard(props){
         {artist.image ? <img src={artist.image} style={{width:100, height:100, borderRadius:20, objectFit:"cover"}}/> : 
         <div style={{width:100, height:100, borderRadius:20, background:GRAD, display:"flex", alignItems:"center", justifyContent:"center", fontSize:40, fontWeight:800, color:"white"}}>{artist.name.charAt(0)}</div>}
         <div>
-          <h1 style={{fontSize:32, fontWeight:800, color:DARK, letterSpacing:-1}}>{artist.name}</h1>
-          <div style={{fontSize:14, color:MT, marginTop:4}}>{artist.genres || artist.genre || "Artista"}</div>
+          <h1 style={{fontSize:32, fontWeight:800, color:TX, letterSpacing:-1}}>{artist.name}</h1>
+          <div style={{fontSize:14, color:SB, marginTop:4}}>{artist.genres || artist.genre || "Artista"}</div>
           {artist.listeners && <div style={{display:"inline-block", marginTop:12, padding:"6px 12px", background:AD, borderRadius:8, color:PRIMARY, fontSize:13, fontWeight:600}}>{fmt(artist.listeners)} Oyentes Mensuales</div>}
         </div>
       </div>
@@ -298,7 +308,7 @@ function Dashboard(props){
       <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20}}>
         {/* Próximos Eventos */}
         <div style={{background:WH, padding:20, borderRadius:16, border:"1px solid "+BD}}>
-          <h3 style={{fontSize:16, fontWeight:700, color:DARK, marginBottom:16}}>📅 Próximos Eventos</h3>
+          <h3 style={{fontSize:16, fontWeight:700, color:TX, marginBottom:16}}>📅 Próximos Eventos</h3>
           <ul style={{listStyle:"none", fontSize:14, color:SB, display:"flex", flexDirection:"column", gap:12}}>
             <li><span style={{fontWeight:700, color:PRIMARY, display:"inline-block", width:40}}>7/3</span> Show promocional</li>
             <li><span style={{fontWeight:700, color:PRIMARY, display:"inline-block", width:40}}>13/3</span> Grabación Estudio DORADO (8pm)</li>
@@ -308,26 +318,26 @@ function Dashboard(props){
 
         {/* Management To-Do */}
         <div style={{background:WH, padding:20, borderRadius:16, border:"1px solid "+BD}}>
-          <h3 style={{fontSize:16, fontWeight:700, color:DARK, marginBottom:16}}>☑️ Management</h3>
+          <h3 style={{fontSize:16, fontWeight:700, color:TX, marginBottom:16}}>☑️ Management</h3>
           <ul style={{listStyle:"none", fontSize:14, color:SB, display:"flex", flexDirection:"column", gap:12}}>
-            <li style={{display:"flex", gap:8}}><input type="checkbox" /> Hacer followup con Neo por featuring</li>
-            <li style={{display:"flex", gap:8}}><input type="checkbox" /> Definir Makeup artist para video</li>
-            <li style={{display:"flex", gap:8}}><input type="checkbox" /> Enviar assets a distribuidora</li>
+            <li style={{display:"flex", gap:8, alignItems:"center"}}><input type="checkbox" style={{accentColor:PRIMARY, width:16, height:16}} /> Hacer followup con Neo por featuring</li>
+            <li style={{display:"flex", gap:8, alignItems:"center"}}><input type="checkbox" style={{accentColor:PRIMARY, width:16, height:16}} /> Definir Makeup artist para video</li>
+            <li style={{display:"flex", gap:8, alignItems:"center"}}><input type="checkbox" style={{accentColor:PRIMARY, width:16, height:16}} /> Enviar assets a distribuidora</li>
           </ul>
         </div>
       </div>
 
       {/* Projects Management */}
       <div style={{background:WH, padding:20, borderRadius:16, border:"1px solid "+BD, marginBottom:20}}>
-        <h3 style={{fontSize:16, fontWeight:700, color:DARK, marginBottom:20}}>🚀 Project Management</h3>
+        <h3 style={{fontSize:16, fontWeight:700, color:TX, marginBottom:20}}>🚀 Project Management</h3>
         <div style={{display:"flex", flexDirection:"column", gap:16}}>
           {projs.map(p => (
             <div key={p.name}>
-              <div style={{fontSize:13, fontWeight:600, color:DARK, marginBottom:8}}>{p.name}</div>
+              <div style={{fontSize:13, fontWeight:600, color:TX, marginBottom:8}}>{p.name}</div>
               <div style={{display:"flex", gap:4}}>
                 {steps.map((s, i) => (
                   <div key={s} style={{flex:1, textAlign:"center"}}>
-                    <div style={{height:6, borderRadius:99, background: i <= p.step ? PRIMARY : BD, marginBottom:6, opacity: i === p.step ? 1 : i < p.step ? 0.4 : 1}}></div>
+                    <div style={{height:6, borderRadius:99, background: i <= p.step ? GRAD : BD, marginBottom:6, opacity: i === p.step ? 1 : i < p.step ? 0.3 : 1}}></div>
                     <div style={{fontSize:9, color: i === p.step ? PRIMARY : DM, fontWeight: i === p.step ? 700 : 500}}>{s}</div>
                   </div>
                 ))}
@@ -341,28 +351,28 @@ function Dashboard(props){
         {/* Legales */}
         <div style={{background:WH, padding:20, borderRadius:16, border:"1px solid "+BD, display:"flex", flexDirection:"column", justifyContent:"center"}}>
           <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:12}}>
-            <div style={{width:32, height:32, borderRadius:8, background:"rgba(220,38,38,0.1)", color:"#DC2626", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700}}>!</div>
-            <h3 style={{fontSize:16, fontWeight:700, color:DARK}}>Alertas Legales</h3>
+            <div style={{width:32, height:32, borderRadius:8, background:"rgba(255, 61, 113, 0.1)", color:"#FF3D71", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700}}>!</div>
+            <h3 style={{fontSize:16, fontWeight:700, color:TX}}>Alertas Legales</h3>
           </div>
           <p style={{fontSize:14, color:SB, marginBottom:16}}>Tienes <strong>2 documentos</strong> para revisar y firmar con vencimiento el 4/4.</p>
-          <button style={{padding:"10px", background:WH, border:"1px solid "+BD, borderRadius:8, fontSize:13, fontWeight:600, color:DARK, cursor:"pointer"}}>Ver documentos</button>
+          <button style={{padding:"10px", background:BG, border:"1px solid "+BD, borderRadius:8, fontSize:13, fontWeight:600, color:TX, cursor:"pointer", transition:"all 0.2s"}} onMouseOver={e=>e.currentTarget.style.borderColor=PRIMARY} onMouseOut={e=>e.currentTarget.style.borderColor=BD}>Ver documentos</button>
         </div>
 
         {/* Finanzas */}
         <div style={{background:WH, padding:20, borderRadius:16, border:"1px solid "+BD}}>
           <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
-            <h3 style={{fontSize:16, fontWeight:700, color:DARK}}>💰 Finanzas (Marzo)</h3>
+            <h3 style={{fontSize:16, fontWeight:700, color:TX}}>💰 Finanzas (Marzo)</h3>
             <span style={{fontSize:11, color:MT, textDecoration:"underline", cursor:"pointer"}}>Filtrar</span>
           </div>
           <div style={{display:"flex", flexDirection:"column", gap:8, marginBottom:16}}>
-            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Regalías Cobradas</span><strong>$1,590</strong></div>
-            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Derechos de Autor</span><strong>$2,543.50</strong></div>
-            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Merch Revenue</span><strong>$3,565</strong></div>
+            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Regalías Cobradas</span><strong style={{color:TX}}>$1,590</strong></div>
+            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Derechos de Autor</span><strong style={{color:TX}}>$2,543.50</strong></div>
+            <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}><span>Merch Revenue</span><strong style={{color:TX}}>$3,565</strong></div>
           </div>
           <div style={{borderTop:"1px solid "+BD, paddingTop:12}}>
             <div style={{fontSize:11, fontWeight:700, color:MT, textTransform:"uppercase", marginBottom:8}}>Fees Pendientes</div>
             <div style={{display:"flex", justifyContent:"space-between", fontSize:13, color:SB}}>
-              <span>Colaboración Coca-Cola</span><span style={{color:DARK, fontWeight:600}}>$5,000 <span style={{fontSize:10, color:MT}}>(6/5)</span></span>
+              <span>Colaboración Coca-Cola</span><span style={{color:PRIMARY, fontWeight:600}}>$5,000 <span style={{fontSize:10, color:MT}}>(6/5)</span></span>
             </div>
           </div>
         </div>
@@ -373,9 +383,9 @@ function Dashboard(props){
 
 function ModulePreview(props){var m=props.module;return(
   <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",background:BG,padding:40}}>
-    <div className="ac" style={{background:WH,border:"1px solid "+BD,borderRadius:20,padding:48,textAlign:"center",maxWidth:400,boxShadow:"0 4px 24px rgba(0,0,0,0.04)"}}>
-      <h3 style={{fontSize:20,fontWeight:700,color:DARK,marginBottom:8}}>{m.name}</h3>
-      <p style={{color:MT,fontSize:14,lineHeight:1.5,marginBottom:20}}>Este módulo estará disponible en la versión completa de BACKSTAGE.</p>
+    <div className="ac" style={{background:WH,border:"1px solid "+BD,borderRadius:20,padding:48,textAlign:"center",maxWidth:400,boxShadow:"0 4px 24px rgba(0,0,0,0.05)"}}>
+      <h3 style={{fontSize:20,fontWeight:700,color:TX,marginBottom:8}}>{m.name}</h3>
+      <p style={{color:SB,fontSize:14,lineHeight:1.5,marginBottom:20}}>Este módulo estará disponible en la versión completa de BACKSTAGE.</p>
       <div style={{padding:"8px 20px",borderRadius:99,background:AD,border:"1px solid "+AB,display:"inline-block",fontSize:12,fontWeight:600,color:PRIMARY}}>Próximamente</div>
     </div></div>);}
 
@@ -388,20 +398,20 @@ function AppDashboard(props){
     <div style={{display:"flex",height:"100vh",background:BG,color:TX,overflow:"hidden"}}>
       <style>{STYLES}</style>
       <div style={{width:272,background:WH,borderRight:"1px solid "+BD,padding:"20px 14px",display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"4px 8px 14px"}}><LogoFull scale={1}/></div>
-        <div style={{margin:"0 8px 18px",padding:"9px 14px",borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:12,fontWeight:600,color:"white"}}>Plan Pro</span><span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>Trial</span></div>
-        <div style={{fontSize:10,fontWeight:600,color:DM,textTransform:"uppercase",letterSpacing:1.5,padding:"0 8px",marginBottom:8}}>Módulos</div>
+        <div style={{padding:"4px 8px 20px"}}><LogoFull scale={0.85}/></div>
+        <div style={{margin:"0 8px 18px",padding:"9px 14px",borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 12px rgba(124,92,255,0.2)"}}>
+          <span style={{fontSize:12,fontWeight:700,color:"white"}}>Plan Pro</span><span style={{fontSize:10,color:"rgba(255,255,255,0.8)"}}>Trial</span></div>
+        <div style={{fontSize:10,fontWeight:700,color:DM,textTransform:"uppercase",letterSpacing:1.5,padding:"0 8px",marginBottom:8}}>Módulos</div>
         {MODULES.map(function(m){var act=mod===m.id;return(
-          <button key={m.id} onClick={function(){setMod(m.id);}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"9px 12px",borderRadius:8,border:"none",cursor:"pointer",marginBottom:2,textAlign:"left",background:act?AD:"transparent",color:act?PRIMARY:MT,fontSize:13,fontWeight:act?600:400,fontFamily:"system-ui,sans-serif"}}>
+          <button key={m.id} onClick={function(){setMod(m.id);}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",padding:"9px 12px",borderRadius:8,border:"none",cursor:"pointer",marginBottom:2,textAlign:"left",background:act?AD:"transparent",color:act?PRIMARY:SB,fontSize:13,fontWeight:act?600:500,fontFamily:"'Plus Jakarta Sans',sans-serif", transition:"all 0.2s"}}>
             <div style={{display:"flex",alignItems:"center",gap:9}}><div style={{width:5,height:5,borderRadius:99,background:act?PRIMARY:DM}}/>{m.name}</div>
-            {!m.active&&m.id!=="agents"&&m.id!=="dashboard"?<span style={{fontSize:9,padding:"2px 7px",borderRadius:99,background:"rgba(0,0,0,0.03)",color:DM}}>Soon</span>:null}
+            {!m.active&&m.id!=="agents"&&m.id!=="dashboard"?<span style={{fontSize:9,padding:"2px 7px",borderRadius:99,background:BG,color:DM}}>Soon</span>:null}
           </button>);})}
         {mod==="agents"?(<div style={{marginTop:6,paddingTop:10,borderTop:"1px solid "+BD}}>
           {AGENTS.map(function(ag){var act=agId===ag.id;return(
-            <button key={ag.id} onClick={function(){setAgId(ag.id);}} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"8px 10px",borderRadius:7,border:"none",cursor:"pointer",marginBottom:2,textAlign:"left",background:act?AD:"transparent",color:act?PRIMARY:DM,fontSize:12,fontFamily:"system-ui,sans-serif"}}>
-              <div style={{width:22,height:22,borderRadius:6,background:act?GRAD:"rgba(0,0,0,0.03)",border:act?"none":"1px solid "+BD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:act?"white":DM}}>{ag.icon}</div>
-              <div style={{fontWeight:act?600:400}}>{ag.name}</div>
+            <button key={ag.id} onClick={function(){setAgId(ag.id);}} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"8px 10px",borderRadius:7,border:"none",cursor:"pointer",marginBottom:2,textAlign:"left",background:act?AD:"transparent",color:act?PRIMARY:SB,fontSize:12,fontWeight:act?600:500,fontFamily:"'Plus Jakarta Sans',sans-serif", transition:"all 0.2s"}}>
+              <div style={{width:22,height:22,borderRadius:6,background:act?GRAD:BG,border:act?"none":"1px solid "+BD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:act?"white":DM}}>{ag.icon}</div>
+              <div>{ag.name}</div>
             </button>);})}
         </div>):null}
         <div style={{flex:1}}/>
