@@ -49,34 +49,15 @@ var AD="rgba(124, 92, 255, 0.08)", AB="rgba(124, 92, 255, 0.15)";
 
 function fmt(n){if(!n&&n!==0)return"—";if(n>=1000000)return(n/1000000).toFixed(1)+"M";if(n>=1000)return(n/1000).toFixed(1)+"K";return String(n);}
 
-/* ═══ ISOLOGO SVG (Diagonal Split Square) ═══ */
-function IsoLogo(props){
-  var s=props.size||32;
-  return(
-    <svg width={s} height={s} viewBox="0 0 48 48" fill="none">
-      <defs>
-        <linearGradient id="gradBrand" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={PRIMARY}/>
-          <stop offset="100%" stopColor={SECONDARY}/>
-        </linearGradient>
-      </defs>
-      {/* Top Left Dark Triangle */}
-      <polygon points="0,0 48,0 0,48" fill={DARK_NAV} />
-      {/* Bottom Right Gradient Triangle */}
-      <polygon points="48,48 48,0 0,48" fill="url(#gradBrand)" />
-    </svg>
-  );
-}
-
+/* ═══ LOGO FROM PUBLIC FOLDER ═══ */
 function LogoFull(props){
   var s=props.scale||1;
   return(
-    <div style={{display:"flex",alignItems:"center",gap:10*s}}>
-      <IsoLogo size={28*s}/>
-      <div style={{fontSize:22*s,fontWeight:800,color:DARK_NAV,letterSpacing:-0.5*s,lineHeight:1}}>
-        BACKSTAGE
-      </div>
-    </div>
+    <img 
+      src="/logo.png" 
+      alt="BACKSTAGE" 
+      style={{ height: 32 * s, objectFit: "contain", display: "block" }} 
+    />
   );
 }
 
@@ -398,7 +379,9 @@ function AppDashboard(props){
     <div style={{display:"flex",height:"100vh",background:BG,color:TX,overflow:"hidden"}}>
       <style>{STYLES}</style>
       <div style={{width:272,background:WH,borderRight:"1px solid "+BD,padding:"20px 14px",display:"flex",flexDirection:"column"}}>
-        <div style={{padding:"4px 8px 20px"}}><LogoFull scale={0.85}/></div>
+        <div style={{padding:"4px 8px 20px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8}}>
+          <LogoFull scale={0.9}/>
+        </div>
         <div style={{margin:"0 8px 18px",padding:"9px 14px",borderRadius:10,background:GRAD,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 12px rgba(124,92,255,0.2)"}}>
           <span style={{fontSize:12,fontWeight:700,color:"white"}}>Plan Pro</span><span style={{fontSize:10,color:"rgba(255,255,255,0.8)"}}>Trial</span></div>
         <div style={{fontSize:10,fontWeight:700,color:DM,textTransform:"uppercase",letterSpacing:1.5,padding:"0 8px",marginBottom:8}}>Módulos</div>
